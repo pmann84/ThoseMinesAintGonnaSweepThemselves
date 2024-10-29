@@ -69,6 +69,16 @@ export const Controls = ({ onReset }: IControlProps) => {
     );
 };
 
+const getCellTextColour = (minesNear: number): string => {
+    if (minesNear === 1) {
+        return "#e0c31f";
+    } else if (minesNear === 2) {
+        return "#d1902e";
+    } else {
+        return "#ff0000";
+    }
+};
+
 export interface ICellProps {
     cellSize: number;
     cell: MinesweeperCell;
@@ -84,6 +94,7 @@ export const Cell = ({ cellSize, cell, maxSize, gapSize, colour, hoverColour, on
     return (
         <Box
             sx={{
+                userSelect: "none",
                 ml: cell.j === 0 ? gapSize : 0.5 * gapSize,
                 mr: cell.j === maxSize - 1 ? gapSize : 0.5 * gapSize,
                 width: cellSize,
@@ -118,7 +129,7 @@ export const Cell = ({ cellSize, cell, maxSize, gapSize, colour, hoverColour, on
                         alignItems: "center",
                     }}
                 >
-                    <Typography color="white">{cell.minesNear > 0 ? cell.minesNear : ""}</Typography>
+                    <Typography color={getCellTextColour(cell.minesNear)}>{cell.minesNear > 0 ? cell.minesNear : ""}</Typography>
                 </Box>
             )}
         </Box>

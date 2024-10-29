@@ -89,14 +89,14 @@ export class MinesweeperBoard {
 
         if (win) {
             this.gameState = GameState.Win;
-            this.onGameStateChanged(this.gameState);
         }
 
         if (lose) {
             this.gameState = GameState.Lose;
-            this.onGameEnd();
-            this.onGameStateChanged(this.gameState);
         }
+
+        this.onGameStateChanged(this.gameState);
+        this.onGameEnd();
     }
 
     private revealAllMines(): void {
@@ -107,9 +107,22 @@ export class MinesweeperBoard {
         });
     }
 
+    private revealAllHiddenSquares(): void {
+        this.board.forEach((c) => {
+            if (c.state === CellState.Hidden && !c.isMine) {
+                this.revealCell(c);
+            }
+        });
+    }
+
     private onGameEnd(): void {
         if (this.gameState === GameState.Lose) {
             this.revealAllMines();
+            this.revealAllHiddenSquares();
+        }
+
+        if (this.gameState === GameState.Win) {
+            this.revealAllHiddenSquares();
         }
     }
 
@@ -123,7 +136,7 @@ export class MinesweeperBoard {
     }
 
     public getCell(i: number, j: number): MinesweeperCell | undefined {
-        if (i >= this._size || j >= this._size) return undefined;
+        if (i >= this._size || j >= this._size || i < 0 || j < 0) return undefined;
         return this.board[j + this._size * i];
     }
 
@@ -145,25 +158,29 @@ export class MinesweeperBoard {
         return cells;
     }
 
+    private revealCell(cell: MinesweeperCell) {
+        if (cell.state !== CellState.Hidden && cell.state !== CellState.Marked) return;
+
+        if (cell.isMine) {
+            cell.state = CellState.Mine;
+        } else {
+            cell.state = CellState.Number;
+            const adjacentCells = this.nearbyTiles(cell);
+            const mines = adjacentCells.filter((t) => t.isMine);
+            if (mines.length === 0) {
+                adjacentCells.forEach((c) => this.clickCell(c.i, c.j));
+            } else {
+                cell.minesNear = mines.length;
+            }
+        }
+    }
+
     public clickCell(i: number, j: number) {
         if (this.gameOver) return;
 
         const cell = this.getCell(i, j);
         if (cell) {
-            if (cell.state !== CellState.Hidden && cell.state !== CellState.Marked) return;
-
-            if (cell.isMine) {
-                cell.state = CellState.Mine;
-            } else {
-                cell.state = CellState.Number;
-                const adjacentCells = this.nearbyTiles(cell);
-                const mines = adjacentCells.filter((t) => t.isMine);
-                if (mines.length === 0) {
-                    adjacentCells.forEach((c) => this.clickCell(c.i, c.j));
-                } else {
-                    cell.minesNear = mines.length;
-                }
-            }
+            this.revealCell(cell);
         }
 
         this.checkGameEnd();
